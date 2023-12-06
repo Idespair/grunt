@@ -4,7 +4,7 @@ module.exports = function(grunt){
         less: {
             development: {
                 files: {
-                    'main.css' : 'main.less'
+                    'dev/styles/main.css' : 'src/styles/main.less'
                 }
             },
             production : {
@@ -12,33 +12,94 @@ module.exports = function(grunt){
                     compress: true,
                 },
                 files : {
-                    'main.min.css' : 'main.less'
+                    'dist/styles/main.min.css' : 'src/styles/main.less'
                 }
             }
         },
-        sass: {
+        watch: {
+            less: {
+                files: ['src/styles/**/*.less'],
+                tasks: ['less:development']
+            },
+            html: {
+                files: ['src/index.html'],
+                tasks: ['replace:dev']
+            }
+        },
+        replace: {
+            dev: {
+                options: {
+                    patterns: [
+                        {
+                            match: 'CSS_ADDRESS',
+                            replacement: './styles/main.css'
+                        },
+                        {
+                            match: 'JS_ADDRESS',
+                            replacement: '../src/scripts/main.js'
+                        }
+                    ]
+                },
+                files: [
+                    {
+                        expand: true,
+                        flatten: true,
+                        src: ['src/index.html'],
+                        dest: 'dev/'
+                    }
+                ]
+            },
             dist: {
                 options: {
-                    style: 'compressed'
+                    patterns: [
+                        {
+                            match: 'CSS_ADDRESS',
+                            replacement: './styles/main.min.css'
+                        },
+                        {
+                            match: 'JS_ADDRESS',
+                            replacement: './scripts/main.min.js'
+                        }
+                    ]
+                },
+                files: [
+                    {
+                        expand: true,
+                        flatten: true,
+                        src: ['prebuild/index.html'],
+                        deset: 'dist/'
+                    }
+                ]
+            }
+        },
+        htmlmin: {
+            dist: {
+                options: {
+                    removedComments: true,
+                    collapseWhitespace: true,
                 },
                 files: {
-                    'main2.css': 'main.scss'
+                    'prebuild/index.html': 'src/index.html'
+                }
+            }
+        },
+        clean: ['prebuild'],
+        uglify: {
+            target: {
+                files: {
+                    'dist/scripts/main.min.js': 'src/scripts/main.js'
                 }
             }
         }
     })
 
-    grunt.registerTask('olaGrunt', function(){
-        const done = this.async();
-        setTimeout(function(){
-            console.log("Olá, Grunt");
-            done();
-        })
-    })
-
     grunt.loadNpmTasks('grunt-contrib-less');
-    grunt.loadNpmTasks('grunt-contrib-sass');
+    grunt.loadNpmTasks('grunt-contrib-watch');
+    grunt.loadNpmTasks('grunt-replace');
+    grunt.loadNpmTasks('grunt-contrib-htmlmin');
+    grunt.loadNpmTasks('grunt-contrib-clean');
+    grunt.loadNpmTasks('grunt-contrib-uglify');
 
-
-    grunt.registerTask('default', ['less','sass']);
+    grunt.registerTask('default', ['watch']);
+    grunt.registerTask('build', ['less:production', 'htmlmin:dist', 'replace:dist', 'clean', 'uglify']);
 }
